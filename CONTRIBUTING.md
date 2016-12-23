@@ -1,8 +1,6 @@
-<a href="https://github.com/muaz-khan/RTCMultiConnection"><img src="https://i.imgur.com/MFfRBSM.png" /></a>
+<a href="https://github.com/muaz-khan/RTCMultiConnection"><img src="https://i.imgur.com/MFfRBSM.png" /></a> / <a href="https://github.com/muaz-khan/RTCMultiConnection/wiki">Wiki Pages</a> / <a href="http://www.rtcmulticonnection.org/docs/">Documentation</a> / <a href="http://www.rtcmulticonnection.org/FAQ/">FAQ</a> / <a href="https://www.webrtc-experiment.com/RTCMultiConnection/">Demos</a> / <a href="http://www.rtcmulticonnection.org/changes-log/">Changes Log</a>
 
-## RTCMultiConnection
-
-> A WebRTC JavaScript Library
+[![npm](https://img.shields.io/npm/v/rtcmulticonnection.svg)](https://npmjs.org/package/rtcmulticonnection) [![downloads](https://img.shields.io/npm/dm/rtcmulticonnection.svg)](https://npmjs.org/package/rtcmulticonnection) [![Build Status: Linux](https://travis-ci.org/muaz-khan/RTCMultiConnection.png?branch=master)](https://travis-ci.org/muaz-khan/RTCMultiConnection)
 
 # Contributors
 
@@ -13,20 +11,6 @@
 5. +Your Name
 
 # Rules to Contribute
-
-Download TAR which is having all the codes including `grunt` files. You don't need to install anything.
-
-```
-# or MOST preferred one
-mkdir RTCMultiConnection-v3.0 && cd RTCMultiConnection-v3.0
-wget http://dl.webrtc-experiment.com/rtcmulticonnection-v3.tar.gz
-tar -zxvf rtcmulticonnection-v3.tar.gz
-ls -a
-```
-
-* [rtcmulticonnection-v3.tar.gz](http://dl.webrtc-experiment.com/rtcmulticonnection-v3.tar.gz)
-
-Or manually install via git/NPM:
 
 ```
 git clone --depth=50 --branch=master git://github.com/muaz-khan/RTCMultiConnection.git muaz-khan/RTCMultiConnection

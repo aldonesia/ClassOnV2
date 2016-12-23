@@ -1,8 +1,6 @@
 node_modules
 bower_components
 
-make-tar.sh
-
 *.tar.gz
 lib-cov
 v2.2.2
@@ -19,4 +17,3 @@ v2.2.2
 config.gypi
 CVS
 npm-debug.log
-rmc-debug.log

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>ClassOn</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <link rel="stylesheet" href="//cdn.webrtc-experiment.com/style.css">
+    <style>
+    body {
+        background-image: url("bg.gif");
+        background-repeat: repeat;
+    }
+    margin-top: 0px;
+    }*/
+    audio,
+    video {
+        -moz-transition: all 1s ease;
+        -ms-transition: all 1s ease;
+        -o-transition: all 1s ease;
+        -webkit-transition: all 1s ease;
+        transition: all 1s ease;
+        vertical-align: top;
+    }
+    
+    input {
+        border: 1px solid #d9d9d9;
+        border-radius: 1px;
+        font-size: 2em;
+        margin: .2em;
+        width: 20%;
+    }
+    
+    .setup {
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
+        font-size: 102%;
+        height: 47px;
+        margin-left: -9px;
+        margin-top: 8px;
+        position: absolute;
+    }
+    
+    p {
+        padding: 1em;
+    }
+    
+    li {
+        border-bottom: 1px solid rgb(189, 189, 189);
+        border-left: 1px solid rgb(189, 189, 189);
+        padding: .5em;
+    }
+    </style>
+    
+    <script>
+    document.createElement('article');
+    document.createElement('footer');
+    </script>
+
+
+    <script src="//cdn.webrtc-experiment.com/RTCMultiConnection.js"></script>
+    <script src="//cdn.webrtc-experiment.com/firebase.js"></script>
+    <script>
+    window.onload=function(){
+    document.getElementById("endclass").style.display='none';
+    document.getElementById("ask").style.display='none';
+    document.getElementById("endask").style.display='none';
+    }
+
+    </script>
+</head>
+
+<body>
+        <header style="text-align: center;">
+            <h1 style="font-size: 100px; color: white;">ClassOn</a>!</h1>
+        </header>
+
+        <section class="experiment">
+            <br>
+            <h2 style="color: white; font-weight: bold; margin-left: 20px;">Siapakah Anda?</h2>
+            <br />
+            <br />
+            <select>
+                <option>Students</option>
+                <option>Lecture</option>
+            </select>       
+            <button>Continue</button>
+            <input type="button" id="endclass" value="endclass" onclick="endclass()"/>
+            <br>
+            <br>
+
+            <div id="videos"></div>
+            <input type="button" id="ask" value="ask" onclick="change()"/>
+            <input type="button" id="endask" value="exit" onclick="endask()"/>
+        </section>
+
+        <script>
+        var select = document.querySelector('select');
+        var button = document.querySelector('button');
+        var videos = document.querySelector('#videos');
+
+        function endclass() {
+            connection.close();
+            window.location.reload();
+        }
+
+        function endask() {
+            connection.close();
+            window.location.reload();
+        };
+
+        function change() {
+            connection.close();
+            this.disabled = true;
+            var role = 'Broadcaster';
+            window.connection = new RTCMultiConnection();
+            connection.dontOverrideSession = true;
+            connection.session = {
+                audio: true,
+                video: true,
+                oneway: role == 'Students'
+            };
+            document.getElementById("ask").style.display='none';    
+            document.getElementById("endask").style.display='block';    
+            
+            connection.onstream = function(e) {
+                videos.appendChild(e.mediaElement);
+                if (e.type == 'remote') {
+                    connection.askToShareParticipants();
+                }
+                if (connection.isInitiator && e.type == 'remote' && !e.session.oneway) {
+                    connection.shareParticipants({
+                        dontShareWith: e.userid
+                    });
+                }
+            };
+
+            connection.onNewSession = function(session) {
+                if (role == 'Students') { 
+                    session.join({
+                        oneway: true
+                    });
+                }
+                if (role == 'Broadcaster') {
+
+                    session.join();
+                }
+            };
+
+            if (role == 'Lecture')
+                connection.open({
+                    sessionid: connection.channel,
+                    captureUserMediaOnDemand: false
+                });
+            else
+                connection.connect(connection.channel);
+        };
+
+        button.onclick = function() {
+            this.disabled = true;
+
+            var role = select.value;
+
+            window.connection = new RTCMultiConnection();
+
+            connection.dontOverrideSession = true;
+
+            connection.session = {
+                audio: true,
+                video: true,
+                oneway: role == 'Students'
+            };
+
+            if (role == 'Students') 
+            {   
+                document.getElementById("ask").style.display='block';
+                document.getElementById("endask").style.display='block';   
+            }
+            else
+            {
+                document.getElementById("endclass").style.display='block';
+            }
+
+            connection.onstream = function(e) {
+                videos.appendChild(e.mediaElement);
+
+                if (e.type == 'remote') {
+                    connection.askToShareParticipants();
+                }
+                if (connection.isInitiator && e.type == 'remote' && !e.session.oneway) {
+                    connection.shareParticipants({
+                        dontShareWith: e.userid
+                    });
+                }
+            };
+
+            connection.onNewSession = function(session) {
+                if (role == 'Students') { 
+                    session.join({
+                        oneway: true
+                    });
+                }
+                if (role == 'Broadcaster') {
+
+                    session.join();
+                }
+            };
+
+            if (role == 'Lecture')
+                connection.open({
+                    sessionid: connection.channel,
+                    captureUserMediaOnDemand: false
+                });
+            else
+                connection.connect(connection.channel);
+        };
+        </script>
+
+
+    <footer>
+        <h3 style="font-size: 20px; color: white;">
+            Mutimedia Networking Final Project   -   2016
+        </h3>
+    </footer>
+</body>
+</html>

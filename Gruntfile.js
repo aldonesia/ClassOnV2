@@ -7,22 +7,6 @@ module.exports = function(grunt) {
         scope: 'devDependencies'
     });
 
-    var versionNumber = grunt.file.readJSON('package.json').version;
-
-    var banner = '// Last time updated: <%= grunt.template.today("UTC:yyyy-mm-dd h:MM:ss TT Z") %>\n\n';
-
-    banner += '// _________________________\n';
-    banner += '// RTCMultiConnection v' + versionNumber + '\n\n';
-
-    banner += '// Open-Sourced: https://github.com/muaz-khan/RTCMultiConnection\n\n';
-
-    banner += '// --------------------------------------------------\n';
-    banner += '// Muaz Khan     - www.MuazKhan.com\n';
-    banner += '// MIT License   - www.WebRTC-Experiment.com/licence\n';
-    banner += '// --------------------------------------------------\n\n';
-
-    banner += '\'use strict\';\n\n';
-
     // configure project
     grunt.initConfig({
         // make node configurations available
@@ -31,85 +15,49 @@ module.exports = function(grunt) {
             options: {
                 stripBanners: true,
                 separator: '\n',
-                banner: banner
+                banner: '// Last time updated at <%= grunt.template.today("dddd, mmmm dS, yyyy, h:MM:ss TT") %> \n\n'
             },
             dist: {
                 src: [
                     'dev/head.js',
-                    // 'dev/amd.js',
-
                     'dev/RTCMultiConnection.js',
-                    'dev/SocketConnection.js', // You can replace it with: FirebaseConnection.js || PubNubConnection.js
-                    'dev/MultiPeersHandler.js',
-
+                    'dev/RTCMultiSession.js',
                     'dev/globals.js',
-                    // 'dev/Plugin.EveryWhere.js',
-                    'dev/DetectRTC.js',
-
-                    'dev/ios-hacks.js', // to support ios
-                    'dev/RTCPeerConnection.js',
-                    'dev/CodecsHandler.js', // to force H264 or codecs other than opus
-
-                    'dev/OnIceCandidateHandler.js',
-                    'dev/IceServersHandler.js',
-
-                    // 'dev/gumadapter.js',
                     'dev/getUserMedia.js',
-                    'dev/StreamsHandler.js',
-
-                    'dev/Screen-Capturing.js',
-
-                    'dev/TextSenderReceiver.js',
-                    'dev/FileProgressBarHandler.js',
-
-                    'dev/TranslationHandler.js',
+                    'dev/PeerConnection.js',
+                    'dev/FilesHandler.js',
+                    'dev/DataMessagingHandler.js',
+                    'dev/DetectRTC.js',
+                    'dev/DetectRTC-Extender.js',
+                    'dev/setDefaults.js',
                     'dev/tail.js'
                 ],
-                dest: './temp/RTCMultiConnection.js',
+                dest: 'RTCMultiConnection.js',
             },
         },
-        replace: {
-            dist: {
+        htmlhint: {
+            html1: {
+                src: [
+                    'demos/*.html'
+                ],
                 options: {
-                    patterns: [{
-                        json: grunt.file.readJSON('config.json')
-                    }, {
-                        match: 'version',
-                        replacement: versionNumber
-                    }]
-                },
-                files: [{
-                    expand: true,
-                    flatten: true,
-                    src: ['./temp/RTCMultiConnection.js'],
-                    dest: './'
-                }]
-            }
-        },
-        clean: ['./temp', 'RTCMultiConnection.js'],
-        uglify: {
-            options: {
-                mangle: false,
-                banner: banner
-            },
-            my_target: {
-                files: {
-                    'dist/RTCMultiConnection.min.js': ['RTCMultiConnection.js']
+                    'tag-pair': true
                 }
             }
         },
-        copy: {
-            main: {
-                options: {
-                    flatten: true
-                },
-                files: {
-                    'dist/RTCMultiConnection.js': ['RTCMultiConnection.js']
-                },
+        uglify: {
+            options: {
+                mangle: false,
+                banner: '// Last time updated at <%= grunt.template.today("dddd, mmmm dS, yyyy, h:MM:ss TT") %> \n\n'
             },
+            my_target: {
+                files: {
+                    'RTCMultiConnection.min.js': ['RTCMultiConnection.js']
+                }
+            }
         },
         jsbeautifier: {
-            files: ['RTCMultiConnection.js', 'dev/*.js', 'Gruntfile.js', 'Signaling-Server.js', 'server.js'],
+            files: ['RTCMultiConnection.js', 'dev/*.js', 'Gruntfile.js'],
             options: {
                 js: {
                     braceStyle: "collapse",
@@ -167,5 +115,5 @@ module.exports = function(grunt) {
 
     // set default tasks to run when grunt is called without parameters
     // http://gruntjs.com/api/grunt.task
-    grunt.registerTask('default', ['concat', 'replace', 'jsbeautifier', 'uglify', 'copy', 'clean']);
+    grunt.registerTask('default', ['concat', 'jsbeautifier', 'htmlhint', 'uglify']);
 };

@@ -1,4 +1,4 @@
-// Last time updated: 2016-11-12 6:02:08 AM UTC
+// Last time updated at Sep 25, 2015, 08:32:23
 
 // Latest file can be found here: https://cdn.webrtc-experiment.com/DetectRTC.js
 
@@ -16,54 +16,15 @@
 
     'use strict';
 
-    var browserFakeUserAgent = 'Fake/5.0 (FakeOS) AppleWebKit/123 (KHTML, like Gecko) Fake/12.3.4567.89 Fake/123.45';
-
-    (function(that) {
-        if (typeof window !== 'undefined') {
-            return;
-        }
-
-        if (typeof window === 'undefined' && typeof global !== 'undefined') {
-            global.navigator = {
-                userAgent: browserFakeUserAgent,
-                getUserMedia: function() {}
-            };
-
-            /*global window:true */
-            that.window = global;
-        } else if (typeof window === 'undefined') {
-            // window = this;
-        }
-
-        if (typeof document === 'undefined') {
-            /*global document:true */
-            that.document = {};
-
-            document.createElement = document.captureStream = document.mozCaptureStream = function() {
-                return {};
-            };
-        }
-
-        if (typeof location === 'undefined') {
-            /*global location:true */
-            that.location = {
-                protocol: 'file:',
-                href: '',
-                hash: ''
-            };
-        }
-
-        if (typeof screen === 'undefined') {
-            /*global screen:true */
-            that.screen = {
-                width: 0,
-                height: 0
-            };
-        }
-    })(typeof global !== 'undefined' ? global : window);
-
-    /*global navigator:true */
     var navigator = window.navigator;
+
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        // Firefox 38+ seems having support of enumerateDevices
+        // Thanks @xdumaine/enumerateDevices
+        navigator.enumerateDevices = function(callback) {
+            navigator.mediaDevices.enumerateDevices().then(callback);
+        };
+    }
 
     if (typeof navigator !== 'undefined') {
         if (typeof navigator.webkitGetUserMedia !== 'undefined') {
@@ -75,20 +36,12 @@
         }
     } else {
         navigator = {
-            getUserMedia: function() {},
-            userAgent: browserFakeUserAgent
+            getUserMedia: function() {}
         };
     }
 
-    var isMobileDevice = !!(/Android|webOS|iPhone|iPad|iPod|BB10|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i.test(navigator.userAgent || ''));
-
+    var isMobileDevice = !!navigator.userAgent.match(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile/i);
     var isEdge = navigator.userAgent.indexOf('Edge') !== -1 && (!!navigator.msSaveOrOpenBlob || !!navigator.msSaveBlob);
-
-    var isOpera = !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
-    var isFirefox = typeof window.InstallTrigger !== 'undefined';
-    var isSafari = Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0;
-    var isChrome = !!window.chrome && !isOpera;
-    var isIE = !!document.documentMode && !isEdge;
 
     // this one can also be used:
     // https://www.websocket.org/js/stuff.js (DetectBrowser.js)
@@ -102,31 +55,26 @@
         var nameOffset, verOffset, ix;
 
         // In Opera, the true version is after 'Opera' or after 'Version'
-        if (isOpera) {
+        if ((verOffset = nAgt.indexOf('Opera')) !== -1) {
             browserName = 'Opera';
-            try {
-                fullVersion = navigator.userAgent.split('OPR/')[1].split(' ')[0];
-                majorVersion = fullVersion.split('.')[0];
-            } catch (e) {
-                fullVersion = '0.0.0.0';
-                majorVersion = 0;
+            fullVersion = nAgt.substring(verOffset + 6);
+
+            if ((verOffset = nAgt.indexOf('Version')) !== -1) {
+                fullVersion = nAgt.substring(verOffset + 8);
             }
         }
         // In MSIE, the true version is after 'MSIE' in userAgent
-        else if (isIE) {
-            verOffset = nAgt.indexOf('MSIE');
+        else if ((verOffset = nAgt.indexOf('MSIE')) !== -1) {
             browserName = 'IE';
             fullVersion = nAgt.substring(verOffset + 5);
         }
-        // In Chrome, the true version is after 'Chrome' 
-        else if (isChrome) {
-            verOffset = nAgt.indexOf('Chrome');
+        // In Chrome, the true version is after 'Chrome'
+        else if ((verOffset = nAgt.indexOf('Chrome')) !== -1) {
             browserName = 'Chrome';
             fullVersion = nAgt.substring(verOffset + 7);
         }
-        // In Safari, the true version is after 'Safari' or after 'Version' 
-        else if (isSafari) {
-            verOffset = nAgt.indexOf('Safari');
+        // In Safari, the true version is after 'Safari' or after 'Version'
+        else if ((verOffset = nAgt.indexOf('Safari')) !== -1) {
             browserName = 'Safari';
             fullVersion = nAgt.substring(verOffset + 7);
 
@@ -134,14 +82,13 @@
                 fullVersion = nAgt.substring(verOffset + 8);
             }
         }
-        // In Firefox, the true version is after 'Firefox' 
-        else if (isFirefox) {
-            verOffset = nAgt.indexOf('Firefox');
+        // In Firefox, the true version is after 'Firefox'
+        else if ((verOffset = nAgt.indexOf('Firefox')) !== -1) {
             browserName = 'Firefox';
             fullVersion = nAgt.substring(verOffset + 8);
         }
 
-        // In most other browsers, 'name/version' is at the end of userAgent 
+        // In most other browsers, 'name/version' is at the end of userAgent
         else if ((nameOffset = nAgt.lastIndexOf(' ') + 1) < (verOffset = nAgt.lastIndexOf('/'))) {
             browserName = nAgt.substring(nameOffset, verOffset);
             fullVersion = nAgt.substring(verOffset + 1);
@@ -154,7 +101,7 @@
         if (isEdge) {
             browserName = 'Edge';
             // fullVersion = navigator.userAgent.split('Edge/')[1];
-            fullVersion = parseInt(navigator.userAgent.match(/Edge\/(\d+).(\d+)$/)[2], 10).toString();
+            fullVersion = parseInt(navigator.userAgent.match(/Edge\/(\d+).(\d+)$/)[2], 10);
         }
 
         // trim the fullVersion string at semicolon/space if present
@@ -176,112 +123,8 @@
         return {
             fullVersion: fullVersion,
             version: majorVersion,
-            name: browserName,
-            isPrivateBrowsing: false
+            name: browserName
         };
-    }
-
-    // via: https://gist.github.com/cou929/7973956
-
-    function retry(isDone, next) {
-        var currentTrial = 0,
-            maxRetry = 50,
-            interval = 10,
-            isTimeout = false;
-        var id = window.setInterval(
-            function() {
-                if (isDone()) {
-                    window.clearInterval(id);
-                    next(isTimeout);
-                }
-                if (currentTrial++ > maxRetry) {
-                    window.clearInterval(id);
-                    isTimeout = true;
-                    next(isTimeout);
-                }
-            },
-            10
-        );
-    }
-
-    function isIE10OrLater(userAgent) {
-        var ua = userAgent.toLowerCase();
-        if (ua.indexOf('msie') === 0 && ua.indexOf('trident') === 0) {
-            return false;
-        }
-        var match = /(?:msie|rv:)\s?([\d\.]+)/.exec(ua);
-        if (match && parseInt(match[1], 10) >= 10) {
-            return true;
-        }
-        return false;
-    }
-
-    function detectPrivateMode(callback) {
-        var isPrivate;
-
-        if (window.webkitRequestFileSystem) {
-            window.webkitRequestFileSystem(
-                window.TEMPORARY, 1,
-                function() {
-                    isPrivate = false;
-                },
-                function(e) {
-                    isPrivate = true;
-                }
-            );
-        } else if (window.indexedDB && /Firefox/.test(window.navigator.userAgent)) {
-            var db;
-            try {
-                db = window.indexedDB.open('test');
-                db.onerror = function() {
-                    return true;
-                };
-            } catch (e) {
-                isPrivate = true;
-            }
-
-            if (typeof isPrivate === 'undefined') {
-                retry(
-                    function isDone() {
-                        return db.readyState === 'done' ? true : false;
-                    },
-                    function next(isTimeout) {
-                        if (!isTimeout) {
-                            isPrivate = db.result ? false : true;
-                        }
-                    }
-                );
-            }
-        } else if (isIE10OrLater(window.navigator.userAgent)) {
-            isPrivate = false;
-            try {
-                if (!window.indexedDB) {
-                    isPrivate = true;
-                }
-            } catch (e) {
-                isPrivate = true;
-            }
-        } else if (window.localStorage && /Safari/.test(window.navigator.userAgent)) {
-            try {
-                window.localStorage.setItem('test', 1);
-            } catch (e) {
-                isPrivate = true;
-            }
-
-            if (typeof isPrivate === 'undefined') {
-                isPrivate = false;
-                window.localStorage.removeItem('test');
-            }
-        }
-
-        retry(
-            function isDone() {
-                return typeof isPrivate !== 'undefined' ? true : false;
-            },
-            function next(isTimeout) {
-                callback(isPrivate);
-            }
-        );
     }
 
     var isMobile = {
@@ -289,7 +132,7 @@
             return navigator.userAgent.match(/Android/i);
         },
         BlackBerry: function() {
-            return navigator.userAgent.match(/BlackBerry|BB10/i);
+            return navigator.userAgent.match(/BlackBerry/i);
         },
         iOS: function() {
             return navigator.userAgent.match(/iPhone|iPad|iPod/i);
@@ -329,168 +172,44 @@
         }
     };
 
-    // via: http://jsfiddle.net/ChristianL/AVyND/
-    function detectDesktopOS() {
-        var unknown = '-';
-
-        var nVer = navigator.appVersion;
-        var nAgt = navigator.userAgent;
-
-        var os = unknown;
-        var clientStrings = [{
-            s: 'Windows 10',
-            r: /(Windows 10.0|Windows NT 10.0)/
-        }, {
-            s: 'Windows 8.1',
-            r: /(Windows 8.1|Windows NT 6.3)/
-        }, {
-            s: 'Windows 8',
-            r: /(Windows 8|Windows NT 6.2)/
-        }, {
-            s: 'Windows 7',
-            r: /(Windows 7|Windows NT 6.1)/
-        }, {
-            s: 'Windows Vista',
-            r: /Windows NT 6.0/
-        }, {
-            s: 'Windows Server 2003',
-            r: /Windows NT 5.2/
-        }, {
-            s: 'Windows XP',
-            r: /(Windows NT 5.1|Windows XP)/
-        }, {
-            s: 'Windows 2000',
-            r: /(Windows NT 5.0|Windows 2000)/
-        }, {
-            s: 'Windows ME',
-            r: /(Win 9x 4.90|Windows ME)/
-        }, {
-            s: 'Windows 98',
-            r: /(Windows 98|Win98)/
-        }, {
-            s: 'Windows 95',
-            r: /(Windows 95|Win95|Windows_95)/
-        }, {
-            s: 'Windows NT 4.0',
-            r: /(Windows NT 4.0|WinNT4.0|WinNT|Windows NT)/
-        }, {
-            s: 'Windows CE',
-            r: /Windows CE/
-        }, {
-            s: 'Windows 3.11',
-            r: /Win16/
-        }, {
-            s: 'Android',
-            r: /Android/
-        }, {
-            s: 'Open BSD',
-            r: /OpenBSD/
-        }, {
-            s: 'Sun OS',
-            r: /SunOS/
-        }, {
-            s: 'Linux',
-            r: /(Linux|X11)/
-        }, {
-            s: 'iOS',
-            r: /(iPhone|iPad|iPod)/
-        }, {
-            s: 'Mac OS X',
-            r: /Mac OS X/
-        }, {
-            s: 'Mac OS',
-            r: /(MacPPC|MacIntel|Mac_PowerPC|Macintosh)/
-        }, {
-            s: 'QNX',
-            r: /QNX/
-        }, {
-            s: 'UNIX',
-            r: /UNIX/
-        }, {
-            s: 'BeOS',
-            r: /BeOS/
-        }, {
-            s: 'OS/2',
-            r: /OS\/2/
-        }, {
-            s: 'Search Bot',
-            r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/
-        }];
-        for (var id in clientStrings) {
-            var cs = clientStrings[id];
-            if (cs.r.test(nAgt)) {
-                os = cs.s;
-                break;
-            }
-        }
-
-        var osVersion = unknown;
-
-        if (/Windows/.test(os)) {
-            if (/Windows (.*)/.test(os)) {
-                osVersion = /Windows (.*)/.exec(os)[1];
-            }
-            os = 'Windows';
-        }
-
-        switch (os) {
-            case 'Mac OS X':
-                if (/Mac OS X (10[\.\_\d]+)/.test(nAgt)) {
-                    osVersion = /Mac OS X (10[\.\_\d]+)/.exec(nAgt)[1];
-                }
-                break;
-            case 'Android':
-                if (/Android ([\.\_\d]+)/.test(nAgt)) {
-                    osVersion = /Android ([\.\_\d]+)/.exec(nAgt)[1];
-                }
-                break;
-            case 'iOS':
-                if (/OS (\d+)_(\d+)_?(\d+)?/.test(nAgt)) {
-                    osVersion = /OS (\d+)_(\d+)_?(\d+)?/.exec(nVer);
-                    osVersion = osVersion[1] + '.' + osVersion[2] + '.' + (osVersion[3] | 0);
-                }
-                break;
-        }
-
-        return {
-            osName: os,
-            osVersion: osVersion
-        };
-    }
-
     var osName = 'Unknown OS';
-    var osVersion = 'Unknown OS Version';
 
     if (isMobile.any()) {
         osName = isMobile.getOsName();
     } else {
-        var osInfo = detectDesktopOS();
-        osName = osInfo.osName;
-        osVersion = osInfo.osVersion;
+        if (navigator.appVersion.indexOf('Win') !== -1) {
+            osName = 'Windows';
+        }
+
+        if (navigator.appVersion.indexOf('Mac') !== -1) {
+            osName = 'MacOS';
+        }
+
+        if (navigator.appVersion.indexOf('X11') !== -1) {
+            osName = 'UNIX';
+        }
+
+        if (navigator.appVersion.indexOf('Linux') !== -1) {
+            osName = 'Linux';
+        }
     }
+
 
     var isCanvasSupportsStreamCapturing = false;
     var isVideoSupportsStreamCapturing = false;
     ['captureStream', 'mozCaptureStream', 'webkitCaptureStream'].forEach(function(item) {
-        if (!isCanvasSupportsStreamCapturing && item in document.createElement('canvas')) {
+        // asdf
+        if (item in document.createElement('canvas')) {
             isCanvasSupportsStreamCapturing = true;
         }
 
-        if (!isVideoSupportsStreamCapturing && item in document.createElement('video')) {
+        if (item in document.createElement('video')) {
             isVideoSupportsStreamCapturing = true;
         }
     });
 
     // via: https://github.com/diafygi/webrtc-ips
     function DetectLocalIPAddress(callback) {
-        if (!DetectRTC.isWebRTCSupported) {
-            return;
-        }
-
-        if (DetectRTC.isORTCSupported) {
-            return;
-        }
-
         getIPs(function(ip) {
             //local IPs
             if (ip.match(/^(192\.168\.|169\.254\.|10\.|172\.(1[6-9]|2\d|3[01]))/)) {
@@ -522,11 +241,6 @@
             var win = iframe.contentWindow;
             RTCPeerConnection = win.RTCPeerConnection || win.mozRTCPeerConnection || win.webkitRTCPeerConnection;
             useWebKit = !!win.webkitRTCPeerConnection;
-        }
-
-        // if still no RTCPeerConnection then it is not supported by the browser so just return
-        if (!RTCPeerConnection) {
-            return;
         }
 
         //minimal requirements for data connection
@@ -562,12 +276,7 @@
         function handleCandidate(candidate) {
             //match just the IP address
             var ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
-            var match = ipRegex.exec(candidate);
-            if (!match) {
-                console.warn('Could not match IP address in', candidate);
-                return;
-            }
-            var ipAddress = match[1];
+            var ipAddress = ipRegex.exec(candidate)[1];
 
             //remove duplicates
             if (ipDuplicates[ipAddress] === undefined) {
@@ -611,21 +320,7 @@
 
     var MediaDevices = [];
 
-    var audioInputDevices = [];
-    var audioOutputDevices = [];
-    var videoInputDevices = [];
-
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-        // Firefox 38+ seems having support of enumerateDevices
-        // Thanks @xdumaine/enumerateDevices
-        navigator.enumerateDevices = function(callback) {
-            navigator.mediaDevices.enumerateDevices().then(callback).catch(function() {
-                callback([]);
-            });
-        };
-    }
-
-    // Media Devices detection
+    // ---------- Media Devices detection
     var canEnumerate = false;
 
     /*global MediaStreamTrack:true */
@@ -635,21 +330,14 @@
         canEnumerate = true;
     }
 
-    var hasMicrophone = false;
-    var hasSpeakers = false;
-    var hasWebcam = false;
-
-    var isWebsiteHasMicrophonePermissions = false;
-    var isWebsiteHasWebcamPermissions = false;
+    var hasMicrophone = canEnumerate;
+    var hasSpeakers = canEnumerate;
+    var hasWebcam = canEnumerate;
 
     // http://dev.w3.org/2011/webrtc/editor/getusermedia.html#mediadevices
+    // todo: switch to enumerateDevices when landed in canary.
     function checkDeviceSupport(callback) {
-        if (!canEnumerate) {
-            if (callback) {
-                callback();
-            }
-            return;
-        }
+        // This method is useful only for Chrome!
 
         if (!navigator.enumerateDevices && window.MediaStreamTrack && window.MediaStreamTrack.getSources) {
             navigator.enumerateDevices = window.MediaStreamTrack.getSources.bind(window.MediaStreamTrack);
@@ -667,26 +355,21 @@
         }
 
         MediaDevices = [];
-
-        audioInputDevices = [];
-        audioOutputDevices = [];
-        videoInputDevices = [];
-
-        // to prevent duplication
-        var alreadyUsedDevices = {};
-
         navigator.enumerateDevices(function(devices) {
             devices.forEach(function(_device) {
                 var device = {};
                 for (var d in _device) {
-                    try {
-                        if (typeof _device[d] !== 'function') {
-                            device[d] = _device[d];
-                        }
-                    } catch (e) {}
+                    device[d] = _device[d];
                 }
 
-                if (alreadyUsedDevices[device.deviceId]) {
+                var skip;
+                MediaDevices.forEach(function(d) {
+                    if (d.id === device.id) {
+                        skip = true;
+                    }
+                });
+
+                if (skip) {
                     return;
                 }
 
@@ -709,64 +392,33 @@
 
                 if (!device.label) {
                     device.label = 'Please invoke getUserMedia once.';
-                    if (location.protocol !== 'https:') {
-                        if (document.domain.search && document.domain.search(/localhost|127.0./g) === -1) {
-                            device.label = 'HTTPs is required to get label of this ' + device.kind + ' device.';
-                        }
-                    }
-                } else {
-                    if (device.kind === 'videoinput' && !isWebsiteHasWebcamPermissions) {
-                        isWebsiteHasWebcamPermissions = true;
-                    }
-
-                    if (device.kind === 'audioinput' && !isWebsiteHasMicrophonePermissions) {
-                        isWebsiteHasMicrophonePermissions = true;
+                    if (!isHTTPs) {
+                        device.label = 'HTTPs is required to get label of this ' + device.kind + ' device.';
                     }
                 }
 
-                if (device.kind === 'audioinput') {
+                if (device.kind === 'audioinput' || device.kind === 'audio') {
                     hasMicrophone = true;
-
-                    if (audioInputDevices.indexOf(device) === -1) {
-                        audioInputDevices.push(device);
-                    }
                 }
 
                 if (device.kind === 'audiooutput') {
                     hasSpeakers = true;
-
-                    if (audioOutputDevices.indexOf(device) === -1) {
-                        audioOutputDevices.push(device);
-                    }
                 }
 
-                if (device.kind === 'videoinput') {
+                if (device.kind === 'videoinput' || device.kind === 'video') {
                     hasWebcam = true;
-
-                    if (videoInputDevices.indexOf(device) === -1) {
-                        videoInputDevices.push(device);
-                    }
                 }
 
                 // there is no 'videoouput' in the spec.
-                MediaDevices.push(device);
 
-                alreadyUsedDevices[device.deviceId] = device;
+                MediaDevices.push(device);
             });
 
             if (typeof DetectRTC !== 'undefined') {
-                // to sync latest outputs
                 DetectRTC.MediaDevices = MediaDevices;
                 DetectRTC.hasMicrophone = hasMicrophone;
                 DetectRTC.hasSpeakers = hasSpeakers;
                 DetectRTC.hasWebcam = hasWebcam;
-
-                DetectRTC.isWebsiteHasWebcamPermissions = isWebsiteHasWebcamPermissions;
-                DetectRTC.isWebsiteHasMicrophonePermissions = isWebsiteHasMicrophonePermissions;
-
-                DetectRTC.audioInputDevices = audioInputDevices;
-                DetectRTC.audioOutputDevices = audioOutputDevices;
-                DetectRTC.videoInputDevices = videoInputDevices;
             }
 
             if (callback) {
@@ -778,28 +430,21 @@
     // check for microphone/camera support!
     checkDeviceSupport();
 
-    var DetectRTC = window.DetectRTC || {};
+    var DetectRTC = {};
 
     // ----------
     // DetectRTC.browser.name || DetectRTC.browser.version || DetectRTC.browser.fullVersion
     DetectRTC.browser = getBrowserInfo();
 
-    detectPrivateMode(function(isPrivateBrowsing) {
-        DetectRTC.browser.isPrivateBrowsing = !!isPrivateBrowsing;
-    });
-
     // DetectRTC.isChrome || DetectRTC.isFirefox || DetectRTC.isEdge
     DetectRTC.browser['is' + DetectRTC.browser.name] = true;
 
+    var isHTTPs = location.protocol === 'https:';
     var isNodeWebkit = !!(window.process && (typeof window.process === 'object') && window.process.versions && window.process.versions['node-webkit']);
 
     // --------- Detect if system supports WebRTC 1.0 or WebRTC 1.1.
     var isWebRTCSupported = false;
-    ['RTCPeerConnection', 'webkitRTCPeerConnection', 'mozRTCPeerConnection', 'RTCIceGatherer'].forEach(function(item) {
-        if (isWebRTCSupported) {
-            return;
-        }
-
+    ['webkitRTCPeerConnection', 'mozRTCPeerConnection', 'RTCIceGatherer'].forEach(function(item) {
         if (item in window) {
             isWebRTCSupported = true;
         }
@@ -817,26 +462,21 @@
         isScreenCapturingSupported = true;
     }
 
-    if (location.protocol !== 'https:') {
+    if (!isHTTPs) {
         isScreenCapturingSupported = false;
     }
     DetectRTC.isScreenCapturingSupported = isScreenCapturingSupported;
 
     // --------- Detect if WebAudio API are supported
-    var webAudio = {
-        isSupported: false,
-        isCreateMediaStreamSourceSupported: false
-    };
-
+    var webAudio = {};
     ['AudioContext', 'webkitAudioContext', 'mozAudioContext', 'msAudioContext'].forEach(function(item) {
-        if (webAudio.isSupported) {
+        if (webAudio.isSupported && webAudio.isCreateMediaStreamSourceSupported) {
             return;
         }
-
         if (item in window) {
             webAudio.isSupported = true;
 
-            if (window[item] && 'createMediaStreamSource' in window[item].prototype) {
+            if ('createMediaStreamSource' in window[item].prototype) {
                 webAudio.isCreateMediaStreamSourceSupported = true;
             }
         }
@@ -867,72 +507,54 @@
     DetectRTC.isMobileDevice = isMobileDevice; // "isMobileDevice" boolean is defined in "getBrowserInfo.js"
 
     // ------
+
+    DetectRTC.isWebSocketsSupported = 'WebSocket' in window && 2 === window.WebSocket.CLOSING;
+    DetectRTC.isWebSocketsBlocked = 'Checking';
+
+    if (DetectRTC.isWebSocketsSupported) {
+        var websocket = new WebSocket('wss://echo.websocket.org:443/');
+        websocket.onopen = function() {
+            DetectRTC.isWebSocketsBlocked = false;
+
+            if (DetectRTC.loadCallback) {
+                DetectRTC.loadCallback();
+            }
+        };
+        websocket.onerror = function() {
+            DetectRTC.isWebSocketsBlocked = true;
+
+            if (DetectRTC.loadCallback) {
+                DetectRTC.loadCallback();
+            }
+        };
+    }
+
+    // ------
     var isGetUserMediaSupported = false;
     if (navigator.getUserMedia) {
         isGetUserMediaSupported = true;
     } else if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         isGetUserMediaSupported = true;
     }
-    if (DetectRTC.browser.isChrome && DetectRTC.browser.version >= 46 && location.protocol !== 'https:') {
+    if (DetectRTC.browser.isChrome && DetectRTC.browser.version >= 47 && !isHTTPs) {
         DetectRTC.isGetUserMediaSupported = 'Requires HTTPs';
     }
     DetectRTC.isGetUserMediaSupported = isGetUserMediaSupported;
 
     // -----------
-    DetectRTC.osName = osName;
-    DetectRTC.osVersion = osVersion;
-
-    var displayResolution = '';
-    if (screen.width) {
-        var width = (screen.width) ? screen.width : '';
-        var height = (screen.height) ? screen.height : '';
-        displayResolution += '' + width + ' x ' + height;
-    }
-    DetectRTC.displayResolution = displayResolution;
+    DetectRTC.osName = osName; // "osName" is defined in "detectOSName.js"
 
     // ----------
     DetectRTC.isCanvasSupportsStreamCapturing = isCanvasSupportsStreamCapturing;
     DetectRTC.isVideoSupportsStreamCapturing = isVideoSupportsStreamCapturing;
 
-    if (DetectRTC.browser.name == 'Chrome' && DetectRTC.browser.version >= 53) {
-        if (!DetectRTC.isCanvasSupportsStreamCapturing) {
-            DetectRTC.isCanvasSupportsStreamCapturing = 'Requires chrome flag: enable-experimental-web-platform-features';
-        }
-
-        if (!DetectRTC.isVideoSupportsStreamCapturing) {
-            DetectRTC.isVideoSupportsStreamCapturing = 'Requires chrome flag: enable-experimental-web-platform-features';
-        }
-    }
-
     // ------
     DetectRTC.DetectLocalIPAddress = DetectLocalIPAddress;
 
-    DetectRTC.isWebSocketsSupported = 'WebSocket' in window && 2 === window.WebSocket.CLOSING;
-    DetectRTC.isWebSocketsBlocked = !DetectRTC.isWebSocketsSupported;
-
-    DetectRTC.checkWebSocketsSupport = function(callback) {
-        callback = callback || function() {};
-        try {
-            var websocket = new WebSocket('wss://echo.websocket.org:443/');
-            websocket.onopen = function() {
-                DetectRTC.isWebSocketsBlocked = false;
-                callback();
-                websocket.close();
-                websocket = null;
-            };
-            websocket.onerror = function() {
-                DetectRTC.isWebSocketsBlocked = true;
-                callback();
-            };
-        } catch (e) {
-            DetectRTC.isWebSocketsBlocked = true;
-            callback();
-        }
-    };
-
     // -------
     DetectRTC.load = function(callback) {
-        callback = callback || function() {};
+        this.loadCallback = callback;
+
         checkDeviceSupport(callback);
     };
 
@@ -940,13 +562,6 @@
     DetectRTC.hasMicrophone = hasMicrophone;
     DetectRTC.hasSpeakers = hasSpeakers;
     DetectRTC.hasWebcam = hasWebcam;
-
-    DetectRTC.isWebsiteHasWebcamPermissions = isWebsiteHasWebcamPermissions;
-    DetectRTC.isWebsiteHasMicrophonePermissions = isWebsiteHasMicrophonePermissions;
-
-    DetectRTC.audioInputDevices = audioInputDevices;
-    DetectRTC.audioOutputDevices = audioOutputDevices;
-    DetectRTC.videoInputDevices = videoInputDevices;
 
     // ------
     var isSetSinkIdSupported = false;
@@ -957,12 +572,12 @@
 
     // -----
     var isRTPSenderReplaceTracksSupported = false;
-    if (DetectRTC.browser.isFirefox && typeof mozRTCPeerConnection !== 'undefined' /*&& DetectRTC.browser.version > 39*/ ) {
+    if (DetectRTC.browser.isFirefox /*&& DetectRTC.browser.version > 39*/ ) {
         /*global mozRTCPeerConnection:true */
         if ('getSenders' in mozRTCPeerConnection.prototype) {
             isRTPSenderReplaceTracksSupported = true;
         }
-    } else if (DetectRTC.browser.isChrome && typeof webkitRTCPeerConnection !== 'undefined') {
+    } else if (DetectRTC.browser.isChrome) {
         /*global webkitRTCPeerConnection:true */
         if ('getSenders' in webkitRTCPeerConnection.prototype) {
             isRTPSenderReplaceTracksSupported = true;
@@ -995,41 +610,6 @@
     }
     DetectRTC.isMultiMonitorScreenCapturingSupported = isMultiMonitorScreenCapturingSupported;
 
-    DetectRTC.isPromisesSupported = !!('Promise' in window);
-
-    if (typeof DetectRTC === 'undefined') {
-        window.DetectRTC = {};
-    }
-
-    var MediaStream = window.MediaStream;
-
-    if (typeof MediaStream === 'undefined' && typeof webkitMediaStream !== 'undefined') {
-        MediaStream = webkitMediaStream;
-    }
-
-    if (typeof MediaStream !== 'undefined') {
-        DetectRTC.MediaStream = Object.keys(MediaStream.prototype);
-    } else DetectRTC.MediaStream = false;
-
-    if (typeof MediaStreamTrack !== 'undefined') {
-        DetectRTC.MediaStreamTrack = Object.keys(MediaStreamTrack.prototype);
-    } else DetectRTC.MediaStreamTrack = false;
-
-    var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-
-    if (typeof RTCPeerConnection !== 'undefined') {
-        DetectRTC.RTCPeerConnection = Object.keys(RTCPeerConnection.prototype);
-    } else DetectRTC.RTCPeerConnection = false;
-
     window.DetectRTC = DetectRTC;
 
-    if (typeof module !== 'undefined' /* && !!module.exports*/ ) {
-        module.exports = DetectRTC;
-    }
-
-    if (typeof define === 'function' && define.amd) {
-        define('DetectRTC', [], function() {
-            return DetectRTC;
-        });
-    }
 })();
